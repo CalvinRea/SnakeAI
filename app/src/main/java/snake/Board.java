@@ -1,93 +1,84 @@
 package snake;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class Board {
-
   private int width;
+
   private int height;
+
   private boolean[][] possible;
+
   private boolean[][] unInflated;
 
   private int length;
 
   private int[] applePos;
+
   private int[] myHead;
 
   private int[][] zombieHeads;
+
   private ArrayList<int[]> enemyHeads;
 
-  public Board(HashMap<String, ArrayList<String>> lines, int inWidth,
-      int inHeight, int myHeadNum) {
-
-    width = inWidth;
-    height = inHeight;
-
-    String arr[] = lines.get("appleLine").get(0).split(" ");
-    applePos = new int[] { Integer.parseInt(arr[0]), Integer.parseInt(arr[1]) };
-
-    zombieHeads = new int[lines.get("zombieLines").size()][2];
-    enemyHeads = new ArrayList<>();
-
-    possible = new boolean[height][width];
-    for (int i = 0; i < possible.length; i++) {
-      for (int j = 0; j < possible[i].length; j++) {
-        possible[i][j] = true;
-      }
+  public Board(HashMap<String, ArrayList<String>> lines, int inWidth, int inHeight, int myHeadNum) {
+    this.width = inWidth;
+    this.height = inHeight;
+    String[] arr = ((String) ((ArrayList<String>) lines.get("appleLine")).get(0)).split(" ");
+    this.applePos = new int[] { Integer.parseInt(arr[0]), Integer.parseInt(arr[1]) };
+    this.zombieHeads = new int[lines.get("zombieLines").size()][2];
+    this.enemyHeads = new ArrayList<>();
+    this.possible = new boolean[this.height][this.width];
+    for (int i = 0; i < this.possible.length; i++) {
+      for (int j = 0; j < (this.possible[i]).length; j++)
+        this.possible[i][j] = true;
     }
-
     drawObstacles(lines.get("obstacleLines"));
     drawZombies(lines.get("zombieLines"));
     drawSnakes(lines.get("snakeLines"), myHeadNum);
-    length = calculateLength(lines.get("snakeLines").get(myHeadNum));
-    unInflated = copyOf(possible);
-
-    possible = inflateAllHeads(1, 1);// changed from 2,2
+    this.length = calculateLength(((ArrayList<String>) lines.get("snakeLines")).get(myHeadNum));
+    this.unInflated = copyOf(this.possible);
+    this.possible = inflateAllHeads(2, 2);
   }
 
   private void drawObstacles(ArrayList<String> obstacleLines) {
-
     for (String line : obstacleLines) {
       String[] obs = line.split(" ");
       for (String string : obs) {
         String[] pos = string.split(",");
-        possible[Integer.parseInt(pos[1])][Integer.parseInt(pos[0])] = false;
+        this.possible[Integer.parseInt(pos[1])][Integer.parseInt(pos[0])] = false;
       }
     }
   }
 
   private void drawZombies(ArrayList<String> zombieLines) {
-
     for (int i = 0; i < zombieLines.size(); i++) {
-      String[] zomParts = zombieLines.get(i).split(" ");
+      String[] zomParts = ((String) zombieLines.get(i)).split(" ");
       String[] head = zomParts[0].split(",");
       int[] headPos = { Integer.parseInt(head[0]), Integer.parseInt(head[1]) };
-      zombieHeads[i] = headPos;
-
-      for (int j = 0; j < zomParts.length - 1; j++) {
+      this.zombieHeads[i] = headPos;
+      for (int j = 0; j < zomParts.length - 1; j++)
         drawLine(zomParts[j], zomParts[j + 1]);
-      }
     }
   }
 
   private void drawSnakes(ArrayList<String> snakeLines, int myHeadNum) {
-
     for (int i = 0; i < snakeLines.size(); i++) {
-      String[] snakeParts = snakeLines.get(i).split(" ");
+      String[] snakeParts = ((String) snakeLines.get(i)).split(" ");
       if (i == myHeadNum) {
         String[] head = snakeParts[3].split(",");
-        myHead = new int[] { Integer.parseInt(head[0]), Integer.parseInt(head[1]) };
-        for (int j = 3; j < snakeParts.length - 1; j++) {
+        this.myHead = new int[] { Integer.parseInt(head[0]), Integer.parseInt(head[1]) };
+        for (int j = 3; j < snakeParts.length - 1; j++)
           drawLine(snakeParts[j], snakeParts[j + 1]);
-        }
-
       } else {
         String[] head = snakeParts[3].split(",");
         int[] headPos = { Integer.parseInt(head[0]), Integer.parseInt(head[1]) };
-        enemyHeads.add(headPos);
-        for (int j = 3; j < snakeParts.length - 1; j++) {
+        this.enemyHeads.add(headPos);
+        for (int j = 3; j < snakeParts.length - 1; j++)
           drawLine(snakeParts[j], snakeParts[j + 1]);
-        }
       }
     }
   }
@@ -101,70 +92,63 @@ public class Board {
     int maxX = Math.max(aX, bX);
     int minY = Math.min(aY, bY);
     int maxY = Math.max(aY, bY);
-
-    for (int i = minX; i <= maxX; i++) {
-      possible[minY][i] = false;
-    }
-
-    for (int j = minY; j <= maxY; j++) {
-      possible[j][minX] = false;
-    }
+    for (int i = minX; i <= maxX; i++)
+      this.possible[minY][i] = false;
+    for (int j = minY; j <= maxY; j++)
+      this.possible[j][minX] = false;
   }
 
   public boolean[][] inflateAllHeads(int enemyInflation, int zombieInflation) {
-    if (enemyInflation > 1 || zombieInflation > 1) {
-      Exception e = new Exception("Don't be an idiot");
-      try {
-        throw e;
-      } catch (Exception f) {
-        f.printStackTrace();
-      }
+    boolean[][] copy = copyOf(this.unInflated);
+    int i;
+    for (i = 0; i < this.enemyHeads.size(); i++) {
+      int[] headPos = this.enemyHeads.get(i);
+      inflateHead(headPos, enemyInflation, copy);
     }
-
-    boolean[][] copy = copyOf(unInflated);
-    if (enemyInflation == 1) {
-      for (int i = 0; i < enemyHeads.size(); i++) {
-        int[] headPos = enemyHeads.get(i);
-        inflateHead(headPos, copy);
-      }
-    }
-
-    if (zombieInflation == 1) {
-      for (int i = 0; i < zombieHeads.length; i++) {
-        int[] headPos = zombieHeads[i];
-        inflateHead(headPos, copy);
-      }
+    for (i = 0; i < this.zombieHeads.length; i++) {
+      int[] headPos = this.zombieHeads[i];
+      inflateHead(headPos, zombieInflation, copy);
     }
     return copy;
   }
 
-  private void inflateHead(int[] head, boolean[][] board) {
-
+  private void inflateHead(int[] position, int maxLevel, boolean[][] board) {
     int[][] directions = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
-    for (int[] direction : directions) {
-      int[] newPos = new int[] { direction[0] + head[0], direction[1] + head[1] };
-      if (!outOfBounds(newPos)) {
-        board[newPos[1]][newPos[0]] = false;
+    board[position[1]][position[1]] = true;
+    Queue<int[]> queue = new LinkedList<>();
+    queue.add(new int[] { position[0], position[1], 0 });
+    boolean[][] visited = new boolean[this.width][this.height];
+    visited[position[0]][position[1]] = true;
+    while (!queue.isEmpty()) {
+      int[] currentPos = queue.poll();
+      int currentLevel = currentPos[2];
+      board[currentPos[1]][currentPos[0]] = false;
+      if (currentLevel >= maxLevel)
+        continue;
+      for (int[] direction : directions) {
+        int[] newPos = { currentPos[0] + direction[0], currentPos[1] + direction[1] };
+        if (!isUnavailable(newPos, board) && !visited[newPos[0]][newPos[1]]) {
+          visited[newPos[0]][newPos[1]] = true;
+          queue.add(new int[] { newPos[0], newPos[1], currentLevel + 1 });
+        }
       }
     }
   }
 
   public boolean isUnavailable(int[] position, boolean[][] playArea) {
-    return position[0] < 0 || position[0] >= width || position[1] < 0 ||
-        position[1] >= height || !playArea[position[1]][position[0]];
+    return (position[0] < 0 || position[0] >= this.width || position[1] < 0 || position[1] >= this.height
+        || !playArea[position[1]][position[0]]);
   }
 
-  public boolean outOfBounds(int[] position) {
-    return position[0] < 0 || position[0] >= width || position[1] < 0 ||
-        position[1] >= height;
+  public boolean withinBounds(int[] position) {
+    return (position[0] < 0 || position[0] >= this.width || position[1] < 0 || position[1] >= this.height);
   }
 
   private boolean[][] copyOf(boolean[][] original) {
     boolean[][] copy = new boolean[50][50];
     for (int i = 0; i < 50; i++) {
-      for (int j = 0; j < 50; j++) {
+      for (int j = 0; j < 50; j++)
         copy[i][j] = original[i][j];
-      }
     }
     return copy;
   }
@@ -175,35 +159,34 @@ public class Board {
   }
 
   public int getLength() {
-    return length;
+    return this.length;
   }
 
   public boolean[][] getPossible() {
-    return possible;
+    return this.possible;
   }
 
   public boolean[][] getUnInflated() {
-    return unInflated;
+    return this.unInflated;
   }
 
   public int[] getApplePos() {
-    return applePos;
+    return this.applePos;
   }
 
   public ArrayList<int[]> getEnemyHeads() {
-    return enemyHeads;
+    return this.enemyHeads;
   }
 
   public int getWidth() {
-    return width;
+    return this.width;
   }
 
   public int getHeight() {
-    return height;
+    return this.height;
   }
 
   public int[] getMyHead() {
-    return myHead;
+    return this.myHead;
   }
-
 }
