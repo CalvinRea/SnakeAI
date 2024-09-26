@@ -18,7 +18,7 @@ dependencies {
     implementation 'com.google.guava:guava:31.1-jre' // Specify the Guava version
 
     // Steve's library
-    implementation files('/home/cal/Projects/Snake/lib/SnakeRunner.jar')
+    implementation files('/home/cal/Videos/SnakeAI/lib/SnakeRunner.jar')
 }
 
 // Set the Java compatibility to JDK 8
