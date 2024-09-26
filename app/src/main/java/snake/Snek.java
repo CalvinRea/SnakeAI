@@ -23,10 +23,6 @@ public class Snek extends DevelopmentAgent {
     start(agent, args);
   }
 
-  private int getMinSafe() {
-    return 6;
-  }
-
   private int calculateMaxLevel() {
     int snakeLength = this.board.getLength();
     if (snakeLength < 25)
@@ -80,7 +76,7 @@ public class Snek extends DevelopmentAgent {
             }
               deadSnakes++;
             } else {
-              lines.get("snakeLines")).add(snakeLine);
+              lines.get("snakeLines").add(snakeLine);
               if (i == mySnakeNum)
                 myHeadNum = i - deadSnakes;
             }
