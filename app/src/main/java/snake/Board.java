@@ -153,16 +153,16 @@ public class Board {
     return (position[0] < 0 || position[0] >= this.width || position[1] < 0 || position[1] >= this.height);
   }
 
-  private boolean[][] copyOf(boolean[][] original) {
-    boolean[][] copy = new boolean[50][50];
-    for (int i = 0; i < 50; i++) {
-      for (int j = 0; j < 50; j++) {
-        copy[i][j] = original[i][j];
-      }
+  public boolean[][] copyOf(boolean[][] original) {
+    int width = original[0].length;
+    int height = original.length;
+    boolean[][] copy = new boolean[height][width];
+    for (int i = 0; i < height; i++) {
+      System.arraycopy(original[i], 0, copy[i], 0, width);
     }
     return copy;
   }
-
+  
   public int calculateLength(String myString) {
     String[] snakeParts = myString.split(" ");
     return Integer.parseInt(snakeParts[1]);
