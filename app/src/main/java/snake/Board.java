@@ -3,6 +3,7 @@ package snake;
 import java.util.*;
 
 public class Board {
+  
   private int width;
 
   private int height;
@@ -31,21 +32,26 @@ public class Board {
     this.zombieHeads = new int[lines.get("zombieLines").size()][2];
     this.enemyHeads = new ArrayList<>();
     this.possible = new boolean[this.height][this.width];
+
     for (int i = 0; i < this.possible.length; i++) {
       for (int j = 0; j < (this.possible[i]).length; j++)
         this.possible[i][j] = true;
     }
+
     drawObstacles(lines.get("obstacleLines"));
     drawZombies(lines.get("zombieLines"));
     drawSnakes(lines.get("snakeLines"), myHeadNum);
+
     this.length = calculateLength(lines.get("snakeLines").get(myHeadNum));
     this.unInflated = copyOf(this.possible);
-    this.possible = inflateAllHeads(2, 2);
+    this.possible = inflateAllHeads(3, 3);// need higher inflation than 1,1 as it tries to split through snakes
   }
 
   private void drawObstacles(ArrayList<String> obstacleLines) {
+
     for (String line : obstacleLines) {
       String[] obs = line.split(" ");
+
       for (String string : obs) {
         String[] pos = string.split(",");
         this.possible[Integer.parseInt(pos[1])][Integer.parseInt(pos[0])] = false;
@@ -120,24 +126,27 @@ public class Board {
   }
 
   private void inflateHead(int[] position, int maxLevel, boolean[][] board) {
+
     int[][] directions = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
-    board[position[1]][position[1]] = true;
+    boolean[][] visited = new boolean[this.height][this.width];
     Queue<int[]> queue = new LinkedList<>();
     queue.add(new int[] { position[0], position[1], 0 });
-    boolean[][] visited = new boolean[this.width][this.height];
-    visited[position[0]][position[1]] = true;
+    visited[position[1]][position[0]] = true;
+
     while (!queue.isEmpty()) {
       int[] currentPos = queue.poll();
       int currentLevel = currentPos[2];
       board[currentPos[1]][currentPos[0]] = false;
+
       if (currentLevel >= maxLevel) {
         continue;
       }
 
       for (int[] direction : directions) {
         int[] newPos = { currentPos[0] + direction[0], currentPos[1] + direction[1] };
-        if (!isUnavailable(newPos, board) && !visited[newPos[0]][newPos[1]]) {
-          visited[newPos[0]][newPos[1]] = true;
+
+        if (!isUnavailable(newPos, board) && !visited[newPos[1]][newPos[0]]) {
+          visited[newPos[1]][newPos[0]] = true;
           queue.add(new int[] { newPos[0], newPos[1], currentLevel + 1 });
         }
       }
@@ -157,12 +166,13 @@ public class Board {
     int width = original[0].length;
     int height = original.length;
     boolean[][] copy = new boolean[height][width];
+
     for (int i = 0; i < height; i++) {
       System.arraycopy(original[i], 0, copy[i], 0, width);
     }
     return copy;
   }
-  
+
   public int calculateLength(String myString) {
     String[] snakeParts = myString.split(" ");
     return Integer.parseInt(snakeParts[1]);
