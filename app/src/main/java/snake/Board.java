@@ -3,7 +3,7 @@ package snake;
 import java.util.*;
 
 public class Board {
-  
+
   private int width;
 
   private int height;
@@ -21,6 +21,8 @@ public class Board {
   private int[][] zombieHeads;
 
   private ArrayList<int[]> enemyHeads;
+
+  private final int headDist = 6;
 
   public Board(HashMap<String, ArrayList<String>> lines, int inWidth,
       int inHeight, int myHeadNum) {
@@ -44,7 +46,7 @@ public class Board {
 
     this.length = calculateLength(lines.get("snakeLines").get(myHeadNum));
     this.unInflated = copyOf(this.possible);
-    this.possible = inflateAllHeads(3, 3);// need higher inflation than 1,1 as it tries to split through snakes
+    this.possible = inflateAllHeads(3, 3);// used to be 3,3
   }
 
   private void drawObstacles(ArrayList<String> obstacleLines) {
@@ -125,6 +127,22 @@ public class Board {
     return copy;
   }
 
+  public boolean isCloseHead(int[] pos) {
+    for (int[] zombieHead : zombieHeads) {
+      if (manDist(pos, zombieHead) < headDist) {
+        return true;
+      }
+    }
+
+    for (int[] enemyHead : enemyHeads) {
+      if (manDist(pos, enemyHead) < headDist) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   private void inflateHead(int[] position, int maxLevel, boolean[][] board) {
 
     int[][] directions = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
@@ -154,12 +172,13 @@ public class Board {
   }
 
   public boolean isUnavailable(int[] position, boolean[][] playArea) {
-    return position[0] < 0 || position[0] >= this.width || position[1] < 0 || position[1] >= this.height
+    return position[0] < 0 || position[0] > this.width - 1 || position[1] < 0 || position[1] > this.height - 1
         || !playArea[position[1]][position[0]];
   }
 
-  public boolean outOfBounds(int[] position) {
-    return (position[0] < 0 || position[0] >= this.width || position[1] < 0 || position[1] >= this.height);
+  public boolean outOfBounds(int[] position, int gap) {
+    return (position[0] < gap || position[0] > this.width - 1 - gap || position[1] < gap
+        || position[1] > this.height - 1 - gap);
   }
 
   public boolean[][] copyOf(boolean[][] original) {
@@ -176,6 +195,10 @@ public class Board {
   public int calculateLength(String myString) {
     String[] snakeParts = myString.split(" ");
     return Integer.parseInt(snakeParts[1]);
+  }
+
+  private int manDist(int[] pos1, int[] pos2) {
+    return Math.abs(pos1[0] - pos2[0]) + Math.abs(pos1[1] - pos2[1]);
   }
 
   public int getLength() {
@@ -208,5 +231,9 @@ public class Board {
 
   public int[] getMyHead() {
     return this.myHead;
+  }
+
+  public int[][] getZombieHeads() {
+    return zombieHeads;
   }
 }

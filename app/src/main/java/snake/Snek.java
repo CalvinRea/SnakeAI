@@ -4,18 +4,21 @@ import java.io.*;
 import java.util.*;
 import za.ac.wits.snake.DevelopmentAgent;
 
-//TODO: change back to A* if necessary
 public class Snek extends DevelopmentAgent {
 
   private final int[][] directions = new int[][] { { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 } };
   private final int numObstacles = 3;
   private final int numZombies = 3;
 
+  private final int minDistFromEdge = 10;// range 0 to 24
+  private final int maxDistFromEdge = 15;
+
   private Board board;
   private int[] fakeApplePos = { -1, -1 };
 
   public static void main(String[] args) {
     Snek agent = new Snek();
+    args = new String[] { "-develop" };
     start(agent, args);
   }
 
@@ -92,15 +95,28 @@ public class Snek extends DevelopmentAgent {
   }
 
   private int move() {
+    int[] myHead = this.board.getMyHead();
+
     int move = -1;
     move = isClosestToApple();
     if (move != -1) {
       System.err.println("Apple move");
+
+      int[] movePos = new int[] { myHead[0] + directions[move][0], myHead[1] + directions[move][1] };
+
+      if (this.board.isUnavailable(movePos, this.board.getUnInflated())) {
+        System.err.print("error invalid move");
+      }
       return move;
     }
 
     move = survivalMove();
     if (move != -1) {
+      int[] movePos = new int[] { myHead[0] + directions[move][0], myHead[1] + directions[move][1] };
+
+      if (this.board.isUnavailable(movePos, this.board.getUnInflated())) {
+        System.err.print("error invalid move");
+      }
       return move;
     }
 
@@ -114,9 +130,9 @@ public class Snek extends DevelopmentAgent {
     Path path = new Path(-1, -1);
 
     if (Arrays.equals(start, goal)) {
-      System.err.println("already at goal");
       return path;
     }
+
     if (this.board.isUnavailable(goal, playArea)) {
       return path;
     }
@@ -145,14 +161,12 @@ public class Snek extends DevelopmentAgent {
         int[] neighbor = { current[0] + direction[0], current[1] + direction[1] };
         int neighborHash = hashPosition(neighbor);
         if (!this.board.isUnavailable(neighbor, playArea)) {
-
           if (!visited.contains(neighborHash)) {
             parentMap.put(neighborHash, hashPosition(current));
             toVisit.add(neighbor);
+            visited.add(neighborHash);
           }
         }
-
-        visited.add(neighborHash);
       }
     }
 
@@ -201,16 +215,6 @@ public class Snek extends DevelopmentAgent {
     return path;
   }
 
-  private int hashPosition(int[] position) {
-    return position[1] * board.getWidth() + position[0];
-  }
-
-  private int[] unhashPosition(int hash) {
-    int x = hash % board.getWidth();
-    int y = hash / board.getWidth();
-    return new int[] { x, y };
-  }
-
   private int isClosestToApple() {
     int[] goal = this.board.getApplePos();
     int[] myHeadPos = this.board.getMyHead();
@@ -225,12 +229,18 @@ public class Snek extends DevelopmentAgent {
         this.board.getMyHead()[0] + directions[myPath.move][0],
         this.board.getMyHead()[1] + directions[myPath.move][1] };
 
+    if (trapped(movePos, this.board.getPossible())) {
+      System.err.println("apple move traps");
+      return -1;
+    }
+
     if (this.board.isUnavailable(movePos, this.board.getUnInflated())) {
       System.err.println("error invalid move");
     }
 
     for (int[] headPos : this.board.getEnemyHeads()) {
       Path enemyPath = bfs(headPos, goal, this.board.getUnInflated());// has to be uninflated
+
       if (enemyPath.size > -1 && myPath.size > enemyPath.size) {
         return -1;
       }
@@ -239,58 +249,108 @@ public class Snek extends DevelopmentAgent {
     return myPath.move;
   }
 
-  private int[] generateApple(boolean[][] playArea) {
-    int offSet = 10;
-    int x = (int) Math.round(Math.random() * (this.board.getWidth() - offSet * 2) + offSet);
-    int y = (int) Math.round(Math.random() * (this.board.getHeight() - offSet * 2) + offSet);
-    int[] apple = new int[] { x, y };
+  private boolean trapped(int[] pos, boolean[][] playArea) {
 
-    while (this.board.isUnavailable(apple, playArea) || Arrays.equals(board.getMyHead(), apple)) {
-      x = (int) Math.round(Math.random() * (this.board.getWidth() - offSet * 2) + offSet);
-      y = (int) Math.round(Math.random() * (this.board.getHeight() - offSet * 2) + offSet);
-      apple = new int[] { x, y };
+    int[][] corners = { { 0, 0 }, { 0, 49 }, { 49, 0 }, { 49, 49 } };
+    int[] freestCorner = { -1, -1 };
+    int maxFree = -1;
+
+    for (int[] corner : corners) {
+      corner = getFirstAvailable(corner, playArea);
+      int free = measureFreeSpace(corner, playArea);
+
+      if (free > maxFree) {
+        freestCorner = corner;
+        maxFree = free;
+      }
     }
-    return apple;
-  }
 
-  private boolean trapped(boolean[][] playArea) {
-    boolean trapped = bfs(this.board.getMyHead(), new int[] { 0, 0 }, playArea).move == -1;
+    boolean trapped = bfs(pos, freestCorner, playArea).move == -1;
     return trapped;
   }
 
-  private int fakeMove(boolean[][] playArea) {
+  private int[] generateApple(boolean[][] playArea) {
 
-    if (trapped(playArea)) {
+    int x = -1;
+    int y = -1;
+    int[] apple = { x, y };
+
+    final int maxIterations = 200;
+    int iterations = 0;
+    boolean found = false;
+
+    while (!found) {
+
+      iterations++;
+      if (iterations >= maxIterations) {
+        break;
+      }
+
+      x = (int) (Math.random() * this.board.getWidth());
+      y = (int) (Math.random() * this.board.getHeight());
+      apple = new int[] { x, y };
+
+      if (!this.board.isUnavailable(apple, playArea)) {
+        if (!Arrays.equals(board.getMyHead(), apple)) {
+          if (!this.board.outOfBounds(apple, minDistFromEdge)) {
+            if (this.board.outOfBounds(apple, maxDistFromEdge)) {
+              if (!this.board.isCloseHead(apple)) {
+                found = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (!found) {
+      return new int[] { -1, -1 };
+    }
+
+    return apple;
+  }
+
+  private int gaslight(boolean[][] playArea) {
+
+    int[] myHead = this.board.getMyHead();
+
+    if (trapped(myHead, playArea)) {
       return -1;
     }
 
-    if (this.board.isUnavailable(fakeApplePos, playArea)
-        || fakeApplePos[0] == -1 || Arrays.equals(board.getMyHead(), fakeApplePos)) {
-      fakeApplePos = generateApple(playArea);
-    }
+    boolean found = true;
+    Path fakePath = bfs(myHead, fakeApplePos, playArea);
 
-    int[] myHeadPos = this.board.getMyHead();
-    Path fakePath = bfs(myHeadPos, fakeApplePos, playArea);
+    if (fakePath.move == -1 || fakeApplePos[0] == -1 || Arrays.equals(board.getMyHead(), fakeApplePos)
+        || trapped(fakeApplePos, playArea) || this.board.isCloseHead(fakeApplePos)) {
+      found = false;
+    }
 
     final int maxIterations = 50;
     int iterations = 0;
 
-    while (fakePath.move == -1 && iterations < maxIterations) {
-      fakeApplePos = generateApple(playArea);
-      fakePath = bfs(myHeadPos, fakeApplePos, playArea);
+    while (!found) {
       iterations++;
-    }
 
-    if (iterations == maxIterations) {
-      return -1;
-    }
+      if (iterations >= maxIterations) {
+        return -1;
+      }
 
-    int[] movePos = new int[] {
-        this.board.getMyHead()[0] + directions[fakePath.move][0],
-        this.board.getMyHead()[1] + directions[fakePath.move][1] };
+      fakeApplePos = generateApple(playArea);
 
-    if (this.board.isUnavailable(movePos, playArea)) {
-      System.err.println("error invalid move");
+      if (this.board.outOfBounds(fakeApplePos, 0)) {
+        continue;
+      }
+
+      if (trapped(fakeApplePos, playArea)) {
+        continue;
+      }
+
+      fakePath = bfs(myHead, fakeApplePos, playArea);
+
+      if (fakePath.move != -1) {
+        found = true;
+      }
     }
 
     return fakePath.move;
@@ -298,46 +358,109 @@ public class Snek extends DevelopmentAgent {
 
   private int lastResort(boolean[][] playArea) {
     int[] myHead = this.board.getMyHead();
+    int bestMove = -1;
+    int maxScore = -1;
 
     for (int i = 0; i < directions.length; i++) {
       int[] newPos = { myHead[0] + directions[i][0], myHead[1] + directions[i][1] };
 
       if (!this.board.isUnavailable(newPos, playArea)) {
-        return i;
+        int score = measureFreeSpace(newPos, playArea);
+
+        if (score > maxScore) {
+          maxScore = score;
+          bestMove = i;
+        }
       }
     }
-    return -1;
+
+    return bestMove;
+  }
+
+  private int measureFreeSpace(int[] start, boolean[][] playArea) {
+    int freeSpace = 0;
+
+    if (this.board.isUnavailable(start, playArea)) {
+      return freeSpace;
+    }
+
+    Queue<int[]> toVisit = new LinkedList<>();
+    Set<Integer> visited = new HashSet<>();
+
+    toVisit.add(start);
+    visited.add(hashPosition(start));
+
+    while (!toVisit.isEmpty()) {
+      int[] current = toVisit.poll();
+      freeSpace++;
+
+      for (int[] direction : this.directions) {
+
+        int[] neighbor = { current[0] + direction[0], current[1] + direction[1] };
+        int neighborHash = hashPosition(neighbor);
+
+        if (!visited.contains(neighborHash)) {
+          visited.add(neighborHash);
+
+          if (!this.board.isUnavailable(neighbor, playArea)) {
+            toVisit.add(neighbor);
+          }
+        }
+      }
+    }
+    return freeSpace;
   }
 
   private int survivalMove() {
 
+    boolean[][] lowerZombie = this.board.inflateAllHeads(3, 1);
+    boolean[][] lowerEnemy = this.board.inflateAllHeads(1, 3);
     boolean[][] lowInflation = this.board.inflateAllHeads(1, 1);
     int move = -1;
-    if (!trapped(lowInflation)) {
-      move = fakeMove(this.board.getPossible());// has to be same as apple
-      if (move != -1) {
-        System.err.println("Slow Fake Apple");
-        return move;
-      }
 
-      move = fakeMove(lowInflation);
-      if (move != -1) {
-        System.err.println("Fast Fake Apple");
-        return move;
-      }
-    }
-    move = lastResort(lowInflation);
+    move = gaslight(this.board.getPossible());// has to be same as apple
     if (move != -1) {
-      System.err.println("Last Resort");
+      System.err.println("gaslight possible");
       return move;
     }
 
-    move = lastResort(this.board.inflateAllHeads(0, 0));
-    System.err.println("BANZAI");
-    return move;
+    move = gaslight(lowerZombie);
+    if (move != -1) {
+      System.err.println("gaslight lower zom");
+      return move;
+    }
+
+    move = gaslight(lowerEnemy);
+    if (move != -1) {
+      System.err.println("gaslight lower enem");
+      return move;
+    }
+
+    move = gaslight(lowInflation);
+    if (move != -1) {
+      System.err.println("gaslight lowest");
+      return move;
+    }
+
+    move = lastResort(lowInflation);
+    if (move != -1) {
+      System.err.println("lastResort low");
+      return move;
+    }
+
+    move = lastResort(this.board.inflateAllHeads(0, 1));
+    if (move != -1) {
+      System.err.println("BANZAI");
+      return move;
+    }
+    return -1;
   }
 
   /* UTILITY METHODS */
+
+  private int manDist(int[] pos1, int[] pos2) {
+    return Math.abs(pos1[0] - pos2[0]) + Math.abs(pos1[1] - pos2[1]);
+  }
 
   private int getClosestMove(int[] goal, int[] current) {
     int move = -1;
@@ -357,4 +480,50 @@ public class Snek extends DevelopmentAgent {
     }
     return move;
   }
+
+  private int hashPosition(int[] position) {
+    return position[1] * board.getWidth() + position[0];
+  }
+
+  private int[] unhashPosition(int hash) {
+    int x = hash % board.getWidth();
+    int y = hash / board.getWidth();
+    return new int[] { x, y };
+  }
+
+  private int[] getFirstAvailable(int[] pos, boolean[][] playArea) {
+
+    Queue<int[]> toVisit = new LinkedList<>();
+    Set<Integer> visited = new HashSet<>();
+
+    if (!this.board.isUnavailable(pos, playArea)) {
+      return pos;
+    }
+    toVisit.add(pos);
+    int posHash = hashPosition(pos);
+    visited.add(posHash);
+
+    while (!toVisit.isEmpty()) {
+      int[] current = toVisit.poll();
+
+      for (int i = 0; i < directions.length; i++) {
+        int[] direction = directions[i];
+        int[] neighbor = { current[0] + direction[0], current[1] + direction[1] };
+        int neighborHash = hashPosition(neighbor);
+
+        if (!visited.contains(neighborHash)) {
+          visited.add(neighborHash);
+
+          if (!this.board.isUnavailable(neighbor, playArea)) {
+            return neighbor;
+          } else {
+            toVisit.add(neighbor);
+          }
+        }
+      }
+    }
+
+    return new int[] { -1, -1 };
+  }
+
 }
