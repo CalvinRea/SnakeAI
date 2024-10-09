@@ -10,8 +10,6 @@ public class Board {
 
   private boolean[][] possible;
 
-  private boolean[][] singleInflation;
-
   private boolean[][] unInflated;
 
   private int length;
@@ -24,8 +22,14 @@ public class Board {
 
   private ArrayList<int[]> enemyHeads;
 
-  private final int headDist = 5;
-  
+  private ArrayList<Integer> enemyLengths;
+
+  private final int headDist = 6;
+
+  private final int enemyInflation = 1;
+
+  private final int zombieInflation = 1;
+
   public Board(HashMap<String, ArrayList<String>> lines, int inWidth,
       int inHeight, int myHeadNum) {
     this.width = inWidth;
@@ -35,6 +39,7 @@ public class Board {
     this.applePos = new int[] { Integer.parseInt(arr[0]), Integer.parseInt(arr[1]) };
     this.zombieHeads = new int[lines.get("zombieLines").size()][2];
     this.enemyHeads = new ArrayList<>();
+    this.enemyLengths = new ArrayList<>();
     this.possible = new boolean[this.height][this.width];
 
     for (int i = 0; i < this.possible.length; i++) {
@@ -46,10 +51,8 @@ public class Board {
     drawZombies(lines.get("zombieLines"));
     drawSnakes(lines.get("snakeLines"), myHeadNum);
 
-    this.length = calculateLength(lines.get("snakeLines").get(myHeadNum));
-    this.unInflated = this.possible;
-    this.singleInflation = inflateAllHeads(1, 1);
-
+    this.unInflated = copyOf(this.possible);
+    this.possible = inflateAllHeads(enemyInflation, zombieInflation);
   }
 
   private void drawObstacles(ArrayList<String> obstacleLines) {
@@ -80,6 +83,7 @@ public class Board {
     for (int i = 0; i < snakeLines.size(); i++) {
       String[] snakeParts = snakeLines.get(i).split(" ");
       if (i == myHeadNum) {
+        this.length = Integer.parseInt(snakeParts[1]);
         String[] head = snakeParts[3].split(",");
         this.myHead = new int[] { Integer.parseInt(head[0]), Integer.parseInt(head[1]) };
         for (int j = 3; j < snakeParts.length - 1; j++) {
@@ -90,6 +94,10 @@ public class Board {
         String[] head = snakeParts[3].split(",");
         int[] headPos = { Integer.parseInt(head[0]), Integer.parseInt(head[1]) };
         this.enemyHeads.add(headPos);
+
+        int length = Integer.parseInt(snakeParts[1]);
+        this.enemyLengths.add(length);
+
         for (int j = 3; j < snakeParts.length - 1; j++) {
           drawLine(snakeParts[j], snakeParts[j + 1]);
         }
@@ -195,11 +203,6 @@ public class Board {
     return copy;
   }
 
-  public int calculateLength(String myString) {
-    String[] snakeParts = myString.split(" ");
-    return Integer.parseInt(snakeParts[1]);
-  }
-
   private int manDist(int[] pos1, int[] pos2) {
     return Math.abs(pos1[0] - pos2[0]) + Math.abs(pos1[1] - pos2[1]);
   }
@@ -236,8 +239,15 @@ public class Board {
     return zombieHeads;
   }
 
-  public boolean[][] getSingleInflation() {
-    return singleInflation;
+  public int getEnemyInflation() {
+    return enemyInflation;
   }
 
+  public boolean[][] getPossible() {
+    return possible;
+  }
+
+  public ArrayList<Integer> getEnemyLengths() {
+    return enemyLengths;
+  }
 }
