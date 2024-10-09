@@ -26,7 +26,7 @@ public class Board {
 
   private final int enemyInflation = 1;
   
-  private final int zombieInflation = 1;
+  private final int zombieInflation = 2;
 
   public Board(HashMap<String, ArrayList<String>> lines, int inWidth,
       int inHeight, int myHeadNum) {

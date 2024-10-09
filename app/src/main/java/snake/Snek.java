@@ -22,7 +22,7 @@ public class Snek extends DevelopmentAgent {
 
   public static void main(String[] args) {
     Snek agent = new Snek();
-    args = new String[] { "-develop" };//TODO: remove this before submission
+    args = new String[] { "-develop" };// TODO: remove this before submission
     start(agent, args);
   }
 
@@ -100,14 +100,33 @@ public class Snek extends DevelopmentAgent {
 
   private int move() {
     int[] myHead = this.board.getMyHead();
+    int move = -1;
+
+    System.err.println("Snake Length:" + this.board.getLength());
+
+    if (this.board.getLength() == 5) {
+      Timer t = new Timer();
+      t.start();
+      Path myPath = aStarRateLimited(this.board.getMyHead(), this.board.getApplePos(),
+          this.board.inflateAllHeads(0, 1));
+      t.stop();
+      System.err.println("adhd cost:"+t.getElapsedTimeMillis());
+      move = myPath.move;
+      if (move != -1) {
+        System.err.println("adhd move");
+        return move;
+      }
+    }
+
     Timer t = new Timer();
     t.start();
-
-    int move = -1;
     move = isClosestToApple();
+    System.err.println("Apple cost: " + t.getElapsedTimeMillis());
+    t.reset();
+
     if (move != -1) {
-      t.stop();
-      System.err.println("Apple move: "+t.getElapsedTimeMillis());
+
+      System.err.println("Apple move");
 
       int[] movePos = new int[] { myHead[0] + directions[move][0], myHead[1] + directions[move][1] };
 
@@ -119,8 +138,6 @@ public class Snek extends DevelopmentAgent {
 
     move = survivalMove();
     if (move != -1) {
-      t.stop();
-      System.err.println("with time: " + t.getElapsedTimeMillis());
       int[] movePos = new int[] { myHead[0] + directions[move][0], myHead[1] + directions[move][1] };
 
       if (this.board.isUnavailable(movePos, this.board.getUnInflated())) {
@@ -228,7 +245,7 @@ public class Snek extends DevelopmentAgent {
 
     Path myPath = aStarRateLimited(myHeadPos, goal, this.board.getPossible());
 
-    myPath.size += this.board.getEnemyInflation();
+    myPath.size += this.board.getEnemyInflation() + 2;// this is 6 for generation
 
     if (myPath.move == -1) {
       return -1;
@@ -431,20 +448,33 @@ public class Snek extends DevelopmentAgent {
   private int survivalMove() {
 
     int move = -1;
+    Timer t = new Timer();
 
-    move = gaslight(this.board.getPossible());// has to be same as apple
+    t.start();
+    move = gaslight(this.board.getPossible());
+    System.err.println("gaslight cost: " + t.getElapsedTimeMillis());
+    t.reset();
+
     if (move != -1) {
       System.err.println("gaslight possible");
       return move;
     }
 
-    move = lastResort(this.board.getPossible());
+    t.start();
+    move = lastResort(this.board.inflateAllHeads(0, 1));
+    System.err.println("last resort cost: " + t.getElapsedTimeMillis());
+    t.reset();
+
     if (move != -1) {
-      System.err.println("lastResort low");
+      System.err.println("lastResort");
       return move;
     }
 
+    t.start();
     move = lastResort(this.board.inflateAllHeads(0, 0));
+    System.err.println("banzai cost: " + t.getElapsedTimeMillis());
+    t.reset();
+
     if (move != -1) {
       System.err.println("BANZAI");
       return move;
