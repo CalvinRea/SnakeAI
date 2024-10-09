@@ -22,7 +22,6 @@ public class Snek extends DevelopmentAgent {
 
   public static void main(String[] args) {
     Snek agent = new Snek();
-    args = new String[] { "-develop" };// TODO: remove this before submission
     start(agent, args);
   }
 
@@ -110,7 +109,7 @@ public class Snek extends DevelopmentAgent {
       Path myPath = aStarRateLimited(this.board.getMyHead(), this.board.getApplePos(),
           this.board.inflateAllHeads(0, 1));
       t.stop();
-      System.err.println("adhd cost:"+t.getElapsedTimeMillis());
+      System.err.println("adhd cost:" + t.getElapsedTimeMillis());
       move = myPath.move;
       if (move != -1) {
         System.err.println("adhd move");
@@ -456,7 +455,17 @@ public class Snek extends DevelopmentAgent {
     t.reset();
 
     if (move != -1) {
-      System.err.println("gaslight possible");
+      System.err.println("gaslight possible move");
+      return move;
+    }
+
+    t.start();
+    move = gaslight(this.board.inflateAllHeads(1, 1));
+    System.err.println("gaslight lower cost: " + t.getElapsedTimeMillis());
+    t.reset();
+
+    if (move != -1) {
+      System.err.println("gaslight lower move");
       return move;
     }
 
