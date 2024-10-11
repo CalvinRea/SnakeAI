@@ -234,7 +234,7 @@ public class Snek extends DevelopmentAgent {
       return -1;
     }
 
-    Path myPath = aStarRateLimited(myHeadPos, goal, this.board.getPossible());
+    Path myPath = aStarRateLimited(myHeadPos, goal, this.board.getSingleInflation());
 
     myPath.size += 3;// this is different for generation
 
@@ -246,7 +246,7 @@ public class Snek extends DevelopmentAgent {
         this.board.getMyHead()[0] + directions[myPath.move][0],
         this.board.getMyHead()[1] + directions[myPath.move][1] };
 
-    if (trapped(movePos, this.board.getPossible())) {// change this inflation higher level?
+    if (trapped(movePos, this.board.getSingleInflation())) {// change this inflation higher level?
       System.err.println("apple move traps");
       return -1;
     }

@@ -47,9 +47,9 @@ public class Board {
     drawSnakes(lines.get("snakeLines"), myHeadNum);
 
     this.length = calculateLength(lines.get("snakeLines").get(myHeadNum));
-    this.unInflated = copyOf(this.possible);
+    this.unInflated = this.possible;
     this.singleInflation = inflateAllHeads(1, 1);
-    this.possible = inflateAllHeads(1, 1);// used to be 3,3
+
   }
 
   private void drawObstacles(ArrayList<String> obstacleLines) {
@@ -206,10 +206,6 @@ public class Board {
 
   public int getLength() {
     return this.length;
-  }
-
-  public boolean[][] getPossible() {
-    return this.possible;
   }
 
   public boolean[][] getUnInflated() {
