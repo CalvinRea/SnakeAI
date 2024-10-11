@@ -10,6 +10,8 @@ public class Board {
 
   private boolean[][] possible;
 
+  private boolean[][] singleInflation;
+
   private boolean[][] unInflated;
 
   private int length;
@@ -22,12 +24,8 @@ public class Board {
 
   private ArrayList<int[]> enemyHeads;
 
-  private final int headDist = 6;
-
-  private final int enemyInflation = 1;
+  private final int headDist = 5;
   
-  private final int zombieInflation = 3;
-
   public Board(HashMap<String, ArrayList<String>> lines, int inWidth,
       int inHeight, int myHeadNum) {
     this.width = inWidth;
@@ -50,7 +48,8 @@ public class Board {
 
     this.length = calculateLength(lines.get("snakeLines").get(myHeadNum));
     this.unInflated = copyOf(this.possible);
-    this.possible = inflateAllHeads(enemyInflation, zombieInflation);// used to be 3,3
+    this.singleInflation = inflateAllHeads(1, 1);
+    this.possible = inflateAllHeads(1, 1);// used to be 3,3
   }
 
   private void drawObstacles(ArrayList<String> obstacleLines) {
@@ -241,9 +240,8 @@ public class Board {
     return zombieHeads;
   }
 
-
-  public int getEnemyInflation() {
-    return enemyInflation;
+  public boolean[][] getSingleInflation() {
+    return singleInflation;
   }
 
 }
