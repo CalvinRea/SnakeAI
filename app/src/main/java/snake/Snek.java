@@ -16,6 +16,7 @@ public class Snek extends DevelopmentAgent {
   private int iterations = 0;
   private int[] previousApple = new int[2];
   private boolean isClosest = true;
+  private boolean trapped;
   private Board board;
   private int[] fakeApplePos = { -1, -1 };
 
@@ -342,6 +343,7 @@ public class Snek extends DevelopmentAgent {
     int[] myHead = this.board.getMyHead();
 
     if (trapped(myHead, playArea)) {
+      trapped = true;
       return -1;
     }
 
@@ -352,7 +354,7 @@ public class Snek extends DevelopmentAgent {
     if (fakePath.move == -1 || fakeApplePos[0] == -1 || Arrays.equals(board.getMyHead(), fakeApplePos)
         || trapped(fakeApplePos, playArea)) {// || this.board.isCloseHead(fakeApplePos
 
-      final int max = 10;
+      final int max = 5;
       int minDist = 5;
 
       for (int j = 0; j < max; j++) {
@@ -431,6 +433,7 @@ public class Snek extends DevelopmentAgent {
 
     int move = -1;
     Timer t = new Timer();
+    trapped = false;
 
     t.start();
 
@@ -445,29 +448,32 @@ public class Snek extends DevelopmentAgent {
     }
     ;
 
-    t.start();
+    if (!trapped) {
+      t.start();
 
-    move = gaslight(this.board.inflateAllHeads(5, 5));
+      move = gaslight(this.board.inflateAllHeads(5, 5));
 
-    System.err.println("gaslight 5 cost: " + t.getElapsedTimeMillis());
-    t.reset();
+      System.err.println("gaslight 5 cost: " + t.getElapsedTimeMillis());
+      t.reset();
 
-    if (move != -1) {
-      System.err.println("gaslight 5 move");
-      return move;
+      if (move != -1) {
+        System.err.println("gaslight 5 move");
+        return move;
+      }
+
+      t.start();
+
+      move = gaslight(this.board.inflateAllHeads(3, 3));
+
+      System.err.println("gaslight 3 cost: " + t.getElapsedTimeMillis());
+      t.reset();
+
+      if (move != -1) {
+        System.err.println("gaslight 3 move");
+        return move;
+      }
     }
-
-    t.start();
-
-    move = gaslight(this.board.inflateAllHeads(3, 3));
-
-    System.err.println("gaslight 3 cost: " + t.getElapsedTimeMillis());
-    t.reset();
-
-    if (move != -1) {
-      System.err.println("gaslight 3 move");
-      return move;
-    }
+   
 
     t.start();
 
