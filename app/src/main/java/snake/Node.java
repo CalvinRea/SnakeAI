@@ -1,7 +1,6 @@
 package snake;
 
 public class Node implements Comparable<Node> {
-  // implements Comparable is used for priority queue
 
   public int fCost, gCost, hCost; // total Cost, actual Cost, heuristic Cost
   public int[] position;
@@ -31,7 +30,7 @@ public class Node implements Comparable<Node> {
   }
 
   @Override
-  public int compareTo(Node other) { // for priority queue
+  public int compareTo(Node other) { 
     int comparison = Integer.compare(this.fCost, other.fCost);
 
     if (comparison == 0) {

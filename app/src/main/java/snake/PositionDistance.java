@@ -11,7 +11,7 @@ public class PositionDistance implements Comparable<PositionDistance> {
   }
 
   @Override
-  public int compareTo(PositionDistance other) { // for priority queue
+  public int compareTo(PositionDistance other) {
     int comparison = Integer.compare(this.distance, other.distance);
     return comparison;
   }
