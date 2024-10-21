@@ -261,7 +261,7 @@ public class Snek extends DevelopmentAgent {
 
     Path myPath = aStarRateLimited(myHeadPos, goal, this.board.getPossible());
 
-    myPath.size += this.board.getEnemyInflation() + 1;// avoid head on collisions
+    myPath.size += this.board.getEnemyInflation();
 
     if (myPath.move == -1) {
       return -1;
@@ -287,7 +287,7 @@ public class Snek extends DevelopmentAgent {
     }
 
     while (!queue.isEmpty()) {
-      Path enemyPath = aStarRateLimited(queue.poll().getPosition(), goal, this.board.getPossible());
+      Path enemyPath = aStarRateLimited(queue.poll().getPosition(), goal, this.board.getUnInflated());
 
       if (myPath.size > enemyPath.size) {
         isClosest = false;
