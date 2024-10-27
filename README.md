@@ -1,4 +1,4 @@
-I won first place at the https://snake.wits.ai/ competition. 
+My snake won first place at the https://snake.wits.ai/ competition out of the 350 participants. 
 
 My snake is written exclusively in java and uses an improved A* search for pathfinding on a 2 by 2 grid. 
 However, when my snake is trapped it used a specialised version of a BFS to find moves that allow the snake to survive the longest while trapped.
